@@ -101,6 +101,10 @@ button:hover{
   background:#0f766e;
 }
 
+.full-write{
+  background:#2563eb;
+}
+
 input[type=range],
 select{
   padding:7px;
@@ -164,6 +168,14 @@ textarea{
 
 .flow-preview-page.en-layout .flow-text-preview{
   grid-column:2;
+}
+
+.flow-preview-page.full-layout{
+  grid-template-columns:1fr;
+}
+
+.flow-preview-page.full-layout .flow-text-preview{
+  grid-column:1;
 }
 
 .flow-text-preview{
@@ -231,6 +243,14 @@ textarea{
 
 .print-page.en-layout .text-side{
   grid-column:2;
+}
+
+.print-page.full-layout{
+  grid-template-columns:1fr;
+}
+
+.print-page.full-layout .text-side{
+  grid-column:1;
 }
 
 .text-side{
@@ -612,6 +632,12 @@ em{
     margin-right:auto;
   }
 
+  body.full-text-mode .print-flow-content{
+    width:194mm;
+    margin-right:0 !important;
+    margin-left:0 !important;
+  }
+
   .print-frame{
     display:block;
     position:fixed;
@@ -621,6 +647,10 @@ em{
     z-index:1;
     pointer-events:none;
     background:transparent;
+  }
+
+  body.full-text-mode .print-frame{
+    display:none !important;
   }
 
   .print-frame-image{
@@ -676,6 +706,15 @@ em{
     gap:7mm;
     page-break-after:always;
     break-after:page;
+  }
+
+  body.full-text-mode .print-page{
+    grid-template-columns:1fr;
+    gap:0;
+  }
+
+  body.full-text-mode .image-side{
+    display:none !important;
   }
 
   .text-side{
@@ -748,6 +787,7 @@ em{
 <div class="controls">
   <button onclick="formatNotes()">✨ ترتيب احترافي</button>
   <button class="layout" onclick="toggleLayout()" id="layoutBtn">🔁 التقسيم: عربي</button>
+  <button class="full-write" onclick="toggleFullTextMode()" id="fullTextBtn">📝 العمود الكامل: إيقاف</button>
   <button class="print" onclick="window.print()">🖨️ طباعة / حفظ PDF</button>
   <button class="copy" onclick="copyFormatted()">📋 نسخ منسق</button>
   <button class="clear-input" onclick="clearInputOnly()">🧹 مسح الكتابة</button>
@@ -777,6 +817,7 @@ em{
 <script>
 let latestPlainText = "";
 let layoutMode = "ar";
+let fullTextMode = false;
 let autoFormatTimer = null;
 
 document.addEventListener("DOMContentLoaded",function(){
@@ -863,8 +904,12 @@ function setSmartDirection(el,text){
 }
 
 function applyBodyLayoutClass(){
-  document.body.classList.remove("ar-mode","en-mode");
+  document.body.classList.remove("ar-mode","en-mode","full-text-mode");
   document.body.classList.add(layoutMode === "ar" ? "ar-mode" : "en-mode");
+
+  if(fullTextMode){
+    document.body.classList.add("full-text-mode");
+  }
 }
 
 function toggleLayout(){
@@ -877,6 +922,23 @@ function toggleLayout(){
     btn.textContent = "🔁 التقسيم: عربي";
   }else{
     btn.textContent = "🔁 التقسيم: إنجليزي";
+  }
+
+  if(document.getElementById("input").value.trim()){
+    formatNotes(false);
+  }
+}
+
+function toggleFullTextMode(){
+  fullTextMode = !fullTextMode;
+  applyBodyLayoutClass();
+
+  const btn = document.getElementById("fullTextBtn");
+
+  if(fullTextMode){
+    btn.textContent = "📝 العمود الكامل: تشغيل";
+  }else{
+    btn.textContent = "📝 العمود الكامل: إيقاف";
   }
 
   if(document.getElementById("input").value.trim()){
@@ -915,7 +977,7 @@ function renderFlowMode(raw,output){
   sheet.className = "flow-sheet";
 
   const previewPage = document.createElement("div");
-  previewPage.className = "flow-preview-page " + (layoutMode === "ar" ? "ar-layout" : "en-layout");
+  previewPage.className = "flow-preview-page " + (layoutMode === "ar" ? "ar-layout" : "en-layout") + (fullTextMode ? " full-layout" : "");
 
   const previewText = document.createElement("div");
   previewText.className = "flow-text-preview";
@@ -929,7 +991,9 @@ function renderFlowMode(raw,output){
   const printFrameImage = document.createElement("div");
   printFrameImage.className = "print-frame-image";
 
-  printFrame.appendChild(printFrameImage);
+  if(!fullTextMode){
+    printFrame.appendChild(printFrameImage);
+  }
 
   const printContent = document.createElement("div");
   printContent.className = "print-flow-content";
@@ -939,7 +1003,10 @@ function renderFlowMode(raw,output){
     printContent.appendChild(block);
   });
 
-  if(layoutMode === "ar"){
+  if(fullTextMode){
+    previewPage.appendChild(previewText);
+  }
+  else if(layoutMode === "ar"){
     previewPage.appendChild(previewText);
     previewPage.appendChild(previewImage);
   }else{
@@ -963,7 +1030,7 @@ function renderPagedMode(raw,output){
 
   pages.forEach(function(pageBlocks,index){
     const page = document.createElement("div");
-    page.className = "print-page " + (layoutMode === "ar" ? "ar-layout" : "en-layout");
+    page.className = "print-page " + (layoutMode === "ar" ? "ar-layout" : "en-layout") + (fullTextMode ? " full-layout" : "");
 
     const textSide = document.createElement("div");
     textSide.className = "text-side";
@@ -980,7 +1047,10 @@ function renderPagedMode(raw,output){
     num.textContent = "Page " + (index + 1);
     textSide.appendChild(num);
 
-    if(layoutMode === "ar"){
+    if(fullTextMode){
+      page.appendChild(textSide);
+    }
+    else if(layoutMode === "ar"){
       page.appendChild(textSide);
       page.appendChild(imageSide);
     }else{
