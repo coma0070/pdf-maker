@@ -1,0 +1,1518 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Medical Notes PDF Designer</title>
+
+<style>
+:root{
+  --font-size:13px;
+  --title-size:18px;
+  --main:#123c69;
+  --accent:#0f766e;
+  --danger:#c2410c;
+  --bg:#eef3f8;
+  --paper:#ffffff;
+  --text:#111827;
+  --muted:#64748b;
+  --line:#cbd5e1;
+  --soft:#eff6ff;
+  --empty-label:"IMAGE / NOTES AREA";
+  --body-line-height:1.42;
+  --line-margin:2px 0;
+  --li-margin:2px 0;
+  --section-margin:8px 0 5px;
+}
+
+*{
+  box-sizing:border-box;
+}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:Arial,"Segoe UI",Tahoma,sans-serif;
+  font-size:var(--font-size);
+  line-height:var(--body-line-height);
+}
+
+header{
+  background:linear-gradient(135deg,#0f172a,#123c69,#0f766e);
+  color:white;
+  padding:22px 14px;
+  text-align:center;
+}
+
+header h1{
+  margin:0;
+  font-size:25px;
+  letter-spacing:.5px;
+}
+
+header p{
+  margin:7px 0 0;
+  opacity:.9;
+}
+
+.controls{
+  max-width:1150px;
+  margin:14px auto;
+  padding:12px;
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  justify-content:center;
+  align-items:center;
+}
+
+button{
+  border:0;
+  padding:10px 14px;
+  border-radius:10px;
+  font-weight:800;
+  cursor:pointer;
+  color:white;
+  background:var(--main);
+}
+
+button:hover{
+  opacity:.9;
+}
+
+.print{
+  background:#6d28d9;
+}
+
+.copy{
+  background:#047857;
+}
+
+.clear{
+  background:#b91c1c;
+}
+
+.clear-input{
+  background:#dc2626;
+}
+
+.layout{
+  background:#0f766e;
+}
+
+input[type=range],
+select{
+  padding:7px;
+}
+
+textarea{
+  width:96%;
+  max-width:1150px;
+  min-height:300px;
+  display:block;
+  margin:0 auto 18px;
+  padding:14px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  resize:vertical;
+  font-size:15px;
+  line-height:1.7;
+  direction:auto;
+  unicode-bidi:plaintext;
+  text-align:start;
+  white-space:pre-wrap;
+}
+
+#output{
+  max-width:1150px;
+  margin:0 auto 50px;
+  padding:0 10px;
+}
+
+.sheet,
+.flow-sheet{
+  background:white;
+  border-radius:18px;
+  padding:18px;
+  box-shadow:0 10px 28px rgba(15,23,42,.12);
+}
+
+.flow-preview-page{
+  background:var(--paper);
+  border:1px solid #dbe3ef;
+  border-radius:16px;
+  padding:14px;
+  margin:16px 0;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px;
+  min-height:780px;
+}
+
+.flow-preview-page.ar-layout .flow-text-preview{
+  grid-column:1;
+}
+
+.flow-preview-page.ar-layout .flow-image-preview{
+  grid-column:2;
+}
+
+.flow-preview-page.en-layout .flow-image-preview{
+  grid-column:1;
+}
+
+.flow-preview-page.en-layout .flow-text-preview{
+  grid-column:2;
+}
+
+.flow-text-preview{
+  border:2px solid #dbeafe;
+  border-radius:14px;
+  padding:13px;
+  background:linear-gradient(180deg,#ffffff,#f8fbff);
+  direction:rtl;
+  unicode-bidi:isolate;
+  text-align:right;
+  overflow:hidden;
+}
+
+.flow-image-preview{
+  border:2px dashed #94a3b8;
+  border-radius:14px;
+  background:
+    linear-gradient(#f8fafc,#f8fafc),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 27px,
+      rgba(148,163,184,.35) 28px
+    );
+  position:relative;
+}
+
+.flow-image-preview::before{
+  content:var(--empty-label);
+  position:absolute;
+  top:12px;
+  left:50%;
+  transform:translateX(-50%);
+  font-size:11px;
+  color:#94a3b8;
+  letter-spacing:1px;
+  font-weight:800;
+}
+
+.print-page{
+  background:var(--paper);
+  border:1px solid #dbe3ef;
+  border-radius:16px;
+  padding:14px;
+  margin:16px 0;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px;
+  min-height:780px;
+  page-break-after:always;
+  break-after:page;
+}
+
+.print-page.ar-layout .text-side{
+  grid-column:1;
+}
+
+.print-page.ar-layout .image-side{
+  grid-column:2;
+}
+
+.print-page.en-layout .image-side{
+  grid-column:1;
+}
+
+.print-page.en-layout .text-side{
+  grid-column:2;
+}
+
+.text-side{
+  border:2px solid #dbeafe;
+  border-radius:14px;
+  padding:13px;
+  background:linear-gradient(180deg,#ffffff,#f8fbff);
+  direction:rtl;
+  unicode-bidi:isolate;
+  text-align:right;
+  overflow:hidden;
+}
+
+.image-side{
+  border:2px dashed #94a3b8;
+  border-radius:14px;
+  background:
+    linear-gradient(#f8fafc,#f8fafc),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 27px,
+      rgba(148,163,184,.35) 28px
+    );
+  position:relative;
+  min-height:100%;
+}
+
+.image-side::before{
+  content:var(--empty-label);
+  position:absolute;
+  top:12px;
+  left:50%;
+  transform:translateX(-50%);
+  font-size:11px;
+  color:#94a3b8;
+  letter-spacing:1px;
+  font-weight:800;
+}
+
+.main-title{
+  background:linear-gradient(135deg,#123c69,#0f766e);
+  color:white;
+  padding:10px 12px;
+  border-radius:12px;
+  text-align:center;
+  font-size:var(--title-size);
+  font-weight:900;
+  margin:0 0 10px;
+  line-height:1.35;
+  direction:rtl;
+  unicode-bidi:isolate;
+}
+
+.section-title{
+  font-size:calc(var(--title-size) - 1px);
+  font-weight:900;
+  color:var(--main);
+  border-bottom:2px solid #bfdbfe;
+  padding-bottom:4px;
+  margin:var(--section-margin);
+  break-after:avoid;
+  page-break-after:avoid;
+  direction:rtl;
+  unicode-bidi:isolate;
+  text-align:right;
+}
+
+.sub-title{
+  font-size:calc(var(--title-size) - 3px);
+  font-weight:900;
+  color:var(--accent);
+  background:#ecfdf5;
+  border-inline-start:4px solid var(--accent);
+  padding:5px 8px;
+  border-radius:9px;
+  margin:7px 0 4px;
+  break-after:avoid;
+  page-break-after:avoid;
+}
+
+.small-title{
+  font-size:calc(var(--font-size) + 1px);
+  font-weight:900;
+  color:#0f172a;
+  background:#eff6ff;
+  border-inline-start:4px solid #3b82f6;
+  padding:4px 7px;
+  border-radius:8px;
+  margin:6px 0 3px;
+  break-after:avoid;
+  page-break-after:avoid;
+}
+
+.line{
+  margin:var(--line-margin);
+  white-space:pre-wrap;
+  direction:rtl;
+  unicode-bidi:isolate;
+  text-align:right;
+  max-width:100%;
+  overflow-wrap:anywhere;
+  tab-size:4;
+}
+
+.line[dir="ltr"],
+.section-title[dir="ltr"],
+.sub-title[dir="ltr"],
+.small-title[dir="ltr"]{
+  text-align:left;
+}
+
+.heading{
+  color:var(--accent);
+  font-weight:900;
+  margin-top:5px;
+  break-after:avoid;
+  page-break-after:avoid;
+}
+
+.important{
+  background:#fff7ed;
+  border-inline-start:4px solid #f97316;
+  padding:4px 7px;
+  border-radius:8px;
+  margin:4px 0;
+  font-weight:800;
+}
+
+.quote{
+  background:#f8fafc;
+  border-inline-start:4px solid #64748b;
+  padding:4px 7px;
+  border-radius:8px;
+  color:#334155;
+}
+
+.md-list-item{
+  display:grid;
+  grid-template-columns:auto 1fr;
+  column-gap:7px;
+  align-items:start;
+  margin:var(--li-margin);
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+  direction:rtl;
+  unicode-bidi:isolate;
+}
+
+.md-list-item[dir="ltr"]{
+  direction:ltr;
+  text-align:left;
+}
+
+.md-marker{
+  font-weight:900;
+  color:var(--main);
+  min-width:18px;
+  text-align:center;
+  direction:ltr;
+  unicode-bidi:isolate;
+}
+
+.md-content{
+  min-width:0;
+}
+
+.md-list-depth-1{
+  margin-inline-start:16px;
+}
+
+.md-list-depth-2{
+  margin-inline-start:30px;
+}
+
+.md-list-depth-3{
+  margin-inline-start:44px;
+}
+
+.md-list-depth-4{
+  margin-inline-start:58px;
+}
+
+ul,
+ol{
+  list-style:none;
+  margin:0;
+  padding:0;
+}
+
+li{
+  list-style:none;
+  margin:var(--li-margin);
+  direction:rtl;
+  unicode-bidi:isolate;
+  text-align:right;
+  overflow-wrap:anywhere;
+  white-space:pre-wrap;
+}
+
+hr{
+  border:0;
+  border-top:1px dashed #94a3b8;
+  margin:7px 0;
+}
+
+code{
+  background:#e2e8f0;
+  padding:1px 4px;
+  border-radius:4px;
+  direction:ltr;
+  unicode-bidi:isolate;
+  display:inline-block;
+  max-width:100%;
+  overflow-wrap:anywhere;
+}
+
+strong{
+  font-weight:900;
+}
+
+em{
+  font-style:italic;
+}
+
+.page-number{
+  margin-top:4px;
+  text-align:center;
+  color:#64748b;
+  font-size:10px;
+  font-weight:700;
+  direction:ltr;
+}
+
+.print-frame{
+  display:none;
+}
+
+.print-flow-content{
+  display:none;
+}
+
+/* =========================
+   TABLE DESIGN
+   ========================= */
+
+.table-wrap{
+  width:100%;
+  max-width:100%;
+  overflow-x:auto;
+  overflow-y:hidden;
+  margin:6px 0 8px;
+  border:1px solid #bfdbfe;
+  border-radius:11px;
+  background:white;
+  break-inside:avoid;
+  page-break-inside:avoid;
+}
+
+.smart-table{
+  width:100%;
+  max-width:100%;
+  border-collapse:collapse;
+  table-layout:fixed;
+  direction:inherit;
+  font-size:calc(var(--font-size) - 1px);
+}
+
+.smart-table th,
+.smart-table td{
+  border:1px solid #dbeafe;
+  padding:6px 7px;
+  vertical-align:top;
+  line-height:1.35;
+  overflow-wrap:anywhere;
+  word-break:break-word;
+  white-space:normal;
+}
+
+.smart-table th{
+  background:#eff6ff;
+  color:#123c69;
+  font-weight:900;
+}
+
+.smart-table tr:nth-child(even) td{
+  background:#f8fbff;
+}
+
+.smart-table td[dir="ltr"],
+.smart-table th[dir="ltr"]{
+  text-align:left;
+}
+
+.smart-table td[dir="rtl"],
+.smart-table th[dir="rtl"]{
+  text-align:right;
+}
+
+.table-caption{
+  font-weight:900;
+  color:var(--main);
+  margin:6px 0 3px;
+  font-size:calc(var(--font-size) + 1px);
+}
+
+@media screen{
+  .print-page{
+    width:100%;
+  }
+}
+
+@media print{
+  @page{
+    size:A4 portrait;
+    margin:8mm;
+  }
+
+  html,
+  body{
+    background:white;
+    margin:0;
+    padding:0;
+    font-size:var(--font-size);
+    line-height:var(--body-line-height);
+    -webkit-print-color-adjust:exact;
+    print-color-adjust:exact;
+  }
+
+  header,
+  .controls,
+  textarea{
+    display:none !important;
+  }
+
+  #output{
+    max-width:none;
+    margin:0;
+    padding:0;
+  }
+
+  .sheet,
+  .flow-sheet{
+    box-shadow:none;
+    border-radius:0;
+    padding:0;
+    margin:0;
+    background:white;
+  }
+
+  .flow-preview-page{
+    display:none !important;
+  }
+
+  .print-flow-content{
+    display:block;
+    position:relative;
+    z-index:2;
+    width:calc((194mm - 7mm) / 2);
+    padding:4mm;
+    border:1.5px solid #bfdbfe;
+    border-radius:5mm;
+    background:linear-gradient(180deg,#ffffff,#f8fbff);
+    direction:rtl;
+    unicode-bidi:isolate;
+    text-align:right;
+    overflow:visible;
+    box-decoration-break:clone;
+    -webkit-box-decoration-break:clone;
+  }
+
+  body.ar-mode .print-flow-content{
+    margin-right:0;
+    margin-left:auto;
+  }
+
+  body.en-mode .print-flow-content{
+    margin-left:0;
+    margin-right:auto;
+  }
+
+  .print-frame{
+    display:block;
+    position:fixed;
+    inset:0;
+    width:194mm;
+    height:281mm;
+    z-index:1;
+    pointer-events:none;
+    background:transparent;
+  }
+
+  .print-frame-image{
+    position:absolute;
+    top:0;
+    width:calc((194mm - 7mm) / 2);
+    height:281mm;
+    border:1.5px dashed #94a3b8;
+    border-radius:5mm;
+    background:
+      linear-gradient(#fbfdff,#fbfdff),
+      repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 8mm,
+        rgba(148,163,184,.35) 8.2mm
+      );
+  }
+
+  body.ar-mode .print-frame-image{
+    left:0;
+    right:auto;
+  }
+
+  body.en-mode .print-frame-image{
+    right:0;
+    left:auto;
+  }
+
+  .print-frame-image::before{
+    content:var(--empty-label);
+    position:absolute;
+    top:4mm;
+    left:50%;
+    transform:translateX(-50%);
+    font-size:8px;
+    color:#94a3b8;
+    letter-spacing:.8px;
+    font-weight:800;
+  }
+
+  .print-page{
+    width:194mm;
+    min-height:0;
+    height:281mm;
+    margin:0;
+    padding:0;
+    border:0;
+    border-radius:0;
+    box-shadow:none;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:7mm;
+    page-break-after:always;
+    break-after:page;
+  }
+
+  .text-side{
+    border:1.5px solid #bfdbfe;
+    border-radius:5mm;
+    padding:4mm;
+    overflow:hidden;
+    background:linear-gradient(180deg,#ffffff,#f8fbff);
+  }
+
+  .image-side{
+    border:1.5px dashed #94a3b8;
+    border-radius:5mm;
+    background:
+      linear-gradient(#fbfdff,#fbfdff),
+      repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 8mm,
+        rgba(148,163,184,.35) 8.2mm
+      );
+  }
+
+  .main-title{
+    color:white !important;
+    background:linear-gradient(135deg,#123c69,#0f766e) !important;
+  }
+
+  .section-title,
+  .sub-title,
+  .small-title,
+  .heading{
+    break-after:avoid;
+    page-break-after:avoid;
+  }
+
+  .important,
+  .quote,
+  .table-wrap{
+    break-inside:avoid;
+    page-break-inside:avoid;
+  }
+
+  .table-wrap{
+    overflow:visible;
+    border-radius:3mm;
+    margin:2.5mm 0;
+  }
+
+  .smart-table{
+    font-size:calc(var(--font-size) - 2px);
+  }
+
+  .smart-table th,
+  .smart-table td{
+    padding:2.2mm 2mm;
+    line-height:1.25;
+  }
+}
+</style>
+</head>
+
+<body class="ar-mode">
+
+<header>
+  <h1>Medical Notes PDF Designer</h1>
+  <p>يمين الصفحة للشرح — يسار الصفحة فارغ للصور والملاحظات</p>
+</header>
+
+<div class="controls">
+  <button onclick="formatNotes()">✨ ترتيب احترافي</button>
+  <button class="layout" onclick="toggleLayout()" id="layoutBtn">🔁 التقسيم: عربي</button>
+  <button class="print" onclick="window.print()">🖨️ طباعة / حفظ PDF</button>
+  <button class="copy" onclick="copyFormatted()">📋 نسخ منسق</button>
+  <button class="clear-input" onclick="clearInputOnly()">🧹 مسح الكتابة</button>
+  <button class="clear" onclick="clearAll()">🗑️ مسح الكل</button>
+
+  <label>حجم النص</label>
+  <input type="range" min="10" max="18" value="13" oninput="setFontSize(this.value)">
+  <span id="fontValue">13px</span>
+
+  <label>حجم العنوان</label>
+  <input type="range" min="15" max="26" value="18" oninput="setTitleSize(this.value)">
+  <span id="titleValue">18px</span>
+
+  <label>تقسيم الصفحات</label>
+  <select id="density" onchange="applyDensity(); formatNotes(false)">
+    <option value="ultra" selected>مضغوط جداً - تدفق تلقائي</option>
+    <option value="compact">مضغوط</option>
+    <option value="normal">متوسط</option>
+    <option value="spacious">واسع</option>
+  </select>
+</div>
+
+<textarea id="input" placeholder="الصق المحاضرة هنا بصيغة Markdown مثل: # Title، ## Section، - Bullet، 1. Number، والجداول..."></textarea>
+
+<div id="output"></div>
+
+<script>
+let latestPlainText = "";
+let layoutMode = "ar";
+let autoFormatTimer = null;
+
+document.addEventListener("DOMContentLoaded",function(){
+  applyDensity();
+  applyBodyLayoutClass();
+
+  const input = document.getElementById("input");
+
+  input.addEventListener("input",function(){
+    clearTimeout(autoFormatTimer);
+
+    autoFormatTimer = setTimeout(function(){
+      if(input.value.trim()){
+        formatNotes(false);
+      }else{
+        document.getElementById("output").innerHTML = "";
+        latestPlainText = "";
+      }
+    },300);
+  });
+});
+
+function isFlowMode(){
+  return document.getElementById("density").value === "ultra";
+}
+
+function applyDensity(){
+  const density = document.getElementById("density").value;
+  const root = document.documentElement;
+
+  if(density === "ultra"){
+    root.style.setProperty("--body-line-height","1.42");
+    root.style.setProperty("--line-margin","2px 0");
+    root.style.setProperty("--li-margin","2px 0");
+    root.style.setProperty("--section-margin","8px 0 5px");
+  }
+  else if(density === "compact"){
+    root.style.setProperty("--body-line-height","1.45");
+    root.style.setProperty("--line-margin","2px 0");
+    root.style.setProperty("--li-margin","2px 0");
+    root.style.setProperty("--section-margin","8px 0 5px");
+  }
+  else if(density === "normal"){
+    root.style.setProperty("--body-line-height","1.55");
+    root.style.setProperty("--line-margin","3px 0");
+    root.style.setProperty("--li-margin","3px 0");
+    root.style.setProperty("--section-margin","10px 0 6px");
+  }
+  else{
+    root.style.setProperty("--body-line-height","1.7");
+    root.style.setProperty("--line-margin","5px 0");
+    root.style.setProperty("--li-margin","4px 0");
+    root.style.setProperty("--section-margin","13px 0 8px");
+  }
+}
+
+function setFontSize(v){
+  document.documentElement.style.setProperty("--font-size", v + "px");
+  document.getElementById("fontValue").textContent = v + "px";
+
+  if(document.getElementById("input").value.trim()){
+    formatNotes(false);
+  }
+}
+
+function setTitleSize(v){
+  document.documentElement.style.setProperty("--title-size", v + "px");
+  document.getElementById("titleValue").textContent = v + "px";
+
+  if(document.getElementById("input").value.trim()){
+    formatNotes(false);
+  }
+}
+
+function hasArabic(text){
+  return /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/.test(text);
+}
+
+function setSmartDirection(el,text){
+  const dir = hasArabic(text) ? "rtl" : "ltr";
+  el.setAttribute("dir",dir);
+  el.style.direction = dir;
+  el.style.unicodeBidi = "isolate";
+}
+
+function applyBodyLayoutClass(){
+  document.body.classList.remove("ar-mode","en-mode");
+  document.body.classList.add(layoutMode === "ar" ? "ar-mode" : "en-mode");
+}
+
+function toggleLayout(){
+  layoutMode = layoutMode === "ar" ? "en" : "ar";
+  applyBodyLayoutClass();
+
+  const btn = document.getElementById("layoutBtn");
+
+  if(layoutMode === "ar"){
+    btn.textContent = "🔁 التقسيم: عربي";
+  }else{
+    btn.textContent = "🔁 التقسيم: إنجليزي";
+  }
+
+  if(document.getElementById("input").value.trim()){
+    formatNotes(false);
+  }
+}
+
+function formatNotes(showAlert = true){
+  applyDensity();
+  applyBodyLayoutClass();
+
+  const raw = document.getElementById("input").value.trim();
+  const output = document.getElementById("output");
+  output.innerHTML = "";
+
+  if(!raw){
+    if(showAlert){
+      alert("الصق النص أولاً");
+    }
+    return;
+  }
+
+  latestPlainText = raw;
+
+  if(isFlowMode()){
+    renderFlowMode(raw,output);
+  }else{
+    renderPagedMode(raw,output);
+  }
+}
+
+function renderFlowMode(raw,output){
+  const blocks = parseToBlocks(raw);
+
+  const sheet = document.createElement("div");
+  sheet.className = "flow-sheet";
+
+  const previewPage = document.createElement("div");
+  previewPage.className = "flow-preview-page " + (layoutMode === "ar" ? "ar-layout" : "en-layout");
+
+  const previewText = document.createElement("div");
+  previewText.className = "flow-text-preview";
+
+  const previewImage = document.createElement("div");
+  previewImage.className = "flow-image-preview";
+
+  const printFrame = document.createElement("div");
+  printFrame.className = "print-frame";
+
+  const printFrameImage = document.createElement("div");
+  printFrameImage.className = "print-frame-image";
+
+  printFrame.appendChild(printFrameImage);
+
+  const printContent = document.createElement("div");
+  printContent.className = "print-flow-content";
+
+  blocks.forEach(function(block){
+    previewText.appendChild(block.cloneNode(true));
+    printContent.appendChild(block);
+  });
+
+  if(layoutMode === "ar"){
+    previewPage.appendChild(previewText);
+    previewPage.appendChild(previewImage);
+  }else{
+    previewPage.appendChild(previewImage);
+    previewPage.appendChild(previewText);
+  }
+
+  sheet.appendChild(previewPage);
+  sheet.appendChild(printFrame);
+  sheet.appendChild(printContent);
+
+  output.appendChild(sheet);
+}
+
+function renderPagedMode(raw,output){
+  const sheet = document.createElement("div");
+  sheet.className = "sheet";
+
+  const blocks = parseToBlocks(raw);
+  const pages = paginateBlocks(blocks);
+
+  pages.forEach(function(pageBlocks,index){
+    const page = document.createElement("div");
+    page.className = "print-page " + (layoutMode === "ar" ? "ar-layout" : "en-layout");
+
+    const textSide = document.createElement("div");
+    textSide.className = "text-side";
+
+    const imageSide = document.createElement("div");
+    imageSide.className = "image-side";
+
+    pageBlocks.forEach(function(block){
+      textSide.appendChild(block);
+    });
+
+    const num = document.createElement("div");
+    num.className = "page-number";
+    num.textContent = "Page " + (index + 1);
+    textSide.appendChild(num);
+
+    if(layoutMode === "ar"){
+      page.appendChild(textSide);
+      page.appendChild(imageSide);
+    }else{
+      page.appendChild(imageSide);
+      page.appendChild(textSide);
+    }
+
+    sheet.appendChild(page);
+  });
+
+  output.appendChild(sheet);
+}
+
+/* =========================
+   MARKDOWN PARSER
+   ========================= */
+
+function parseToBlocks(raw){
+  let text = raw
+    .replace(/\r/g,"")
+    .replace(/━━━━━━━━━━━━━━━━━━/g,"\n---\n")
+    .replace(/━{5,}/g,"\n---\n");
+
+  const lines = text.split("\n");
+  return renderLinesToBlocks(lines);
+}
+
+function renderLinesToBlocks(lines){
+  const blocks = [];
+  let i = 0;
+
+  while(i < lines.length){
+    const rawLine = lines[i].replace(/\s+$/g,"");
+    const t = rawLine.trim();
+
+    if(!t){
+      i++;
+      continue;
+    }
+
+    if(isTableStart(lines,i)){
+      const result = collectTable(lines,i);
+      const tableBlock = createTableBlock(result.rows);
+      blocks.push(tableBlock);
+      i = result.nextIndex;
+      continue;
+    }
+
+    if(/^(-{3,}|\*{3,}|_{3,})$/.test(t)){
+      blocks.push(document.createElement("hr"));
+      i++;
+      continue;
+    }
+
+    const headingMatch = t.match(/^(#{1,6})\s+(.*)$/);
+
+    if(headingMatch){
+      const level = headingMatch[1].length;
+      const content = headingMatch[2].trim();
+      const cleanContent = stripOuterBold(content);
+
+      const div = document.createElement("div");
+
+      if(level === 1){
+        div.className = "main-title";
+      }
+      else if(level === 2){
+        div.className = "section-title";
+      }
+      else if(level === 3){
+        div.className = "sub-title";
+      }
+      else{
+        div.className = "small-title";
+      }
+
+      div.innerHTML = inlineMarkdown(cleanContent);
+      setSmartDirection(div,cleanContent);
+      blocks.push(div);
+      i++;
+      continue;
+    }
+
+    const listInfo = parseMarkdownListItem(rawLine);
+
+    if(listInfo){
+      const item = createMarkdownListItem(listInfo);
+      blocks.push(item);
+      i++;
+      continue;
+    }
+
+    const div = document.createElement("div");
+    div.className = "line";
+
+    if(t.startsWith(">")){
+      const clean = rawLine.replace(/^\s*>\s?/,"");
+      div.className += " quote";
+      div.innerHTML = inlineMarkdown(clean);
+      setSmartDirection(div,clean);
+    }
+    else if(
+      t.startsWith("👉") ||
+      t.startsWith("⭐") ||
+      t.includes("مهم") ||
+      t.toLowerCase().includes("high-yield") ||
+      t.toLowerCase().includes("clinical") ||
+      t.toLowerCase().includes("surgical emergency")
+    ){
+      div.className += " important";
+      div.innerHTML = inlineMarkdown(rawLine.trim());
+      setSmartDirection(div,rawLine);
+    }
+    else if(
+      t.startsWith("🔹") ||
+      /:$/.test(t)
+    ){
+      div.className += " heading";
+      div.innerHTML = inlineMarkdown(rawLine.trim());
+      setSmartDirection(div,rawLine);
+    }
+    else{
+      div.innerHTML = inlineMarkdown(rawLine.trim());
+      setSmartDirection(div,rawLine);
+    }
+
+    blocks.push(div);
+    i++;
+  }
+
+  return blocks;
+}
+
+function stripOuterBold(text){
+  let x = text.trim();
+
+  if(/^\*\*.*\*\*$/.test(x)){
+    x = x.replace(/^\*\*/,"").replace(/\*\*$/,"");
+  }
+
+  if(/^__.*__$/.test(x)){
+    x = x.replace(/^__/,"").replace(/__$/,"");
+  }
+
+  return x.trim();
+}
+
+function parseMarkdownListItem(line){
+  const match = line.match(/^(\s*)([-+*]|\d+[.)])\s+(.*)$/);
+
+  if(!match){
+    return null;
+  }
+
+  const spaces = match[1].replace(/\t/g,"    ").length;
+  const marker = match[2];
+  const content = match[3];
+  const depth = Math.min(4, Math.floor(spaces / 2));
+
+  return {
+    marker: marker,
+    content: content,
+    depth: depth,
+    fullText: line
+  };
+}
+
+function createMarkdownListItem(info){
+  const div = document.createElement("div");
+  div.className = "md-list-item md-list-depth-" + info.depth;
+
+  const marker = document.createElement("span");
+  marker.className = "md-marker";
+
+  if(info.marker === "-" || info.marker === "+" || info.marker === "*"){
+    marker.textContent = "•";
+  }else{
+    marker.textContent = info.marker;
+  }
+
+  const content = document.createElement("span");
+  content.className = "md-content";
+  content.innerHTML = inlineMarkdown(info.content);
+
+  div.appendChild(marker);
+  div.appendChild(content);
+
+  setSmartDirection(div,info.content);
+
+  return div;
+}
+
+/* =========================
+   TABLE PARSER
+   ========================= */
+
+function isTableStart(lines,index){
+  const line = lines[index];
+
+  if(!line || !line.includes("|")){
+    return false;
+  }
+
+  const cells = splitTableLine(line);
+
+  if(cells.length < 2){
+    return false;
+  }
+
+  const next = lines[index + 1];
+
+  if(next && isMarkdownSeparatorLine(next)){
+    return true;
+  }
+
+  let similarRows = 0;
+
+  for(let j = index; j < Math.min(lines.length,index + 4); j++){
+    if(lines[j] && lines[j].includes("|") && splitTableLine(lines[j]).length >= 2){
+      similarRows++;
+    }
+  }
+
+  return similarRows >= 2;
+}
+
+function collectTable(lines,startIndex){
+  const rows = [];
+  let i = startIndex;
+
+  while(i < lines.length){
+    const line = lines[i];
+
+    if(!line || !line.includes("|")){
+      break;
+    }
+
+    if(isMarkdownSeparatorLine(line)){
+      i++;
+      continue;
+    }
+
+    const cells = splitTableLine(line);
+
+    if(cells.length < 2){
+      break;
+    }
+
+    rows.push(cells);
+    i++;
+  }
+
+  const normalizedRows = normalizeTableRows(rows);
+
+  return {
+    rows: normalizedRows,
+    nextIndex: i
+  };
+}
+
+function splitTableLine(line){
+  let clean = line.trim();
+
+  if(clean.startsWith("|")){
+    clean = clean.slice(1);
+  }
+
+  if(clean.endsWith("|")){
+    clean = clean.slice(0,-1);
+  }
+
+  return clean
+    .split("|")
+    .map(function(cell){
+      return cell.trim();
+    })
+    .filter(function(cell,index,arr){
+      return !(cell === "" && arr.length > 2);
+    });
+}
+
+function isMarkdownSeparatorLine(line){
+  const clean = line.trim();
+
+  if(!clean.includes("|")){
+    return false;
+  }
+
+  const cells = splitTableLine(clean);
+
+  if(cells.length < 2){
+    return false;
+  }
+
+  return cells.every(function(cell){
+    return /^:?-{3,}:?$/.test(cell.trim()) || /^-+$/.test(cell.trim());
+  });
+}
+
+function normalizeTableRows(rows){
+  let maxCols = 0;
+
+  rows.forEach(function(row){
+    maxCols = Math.max(maxCols,row.length);
+  });
+
+  return rows.map(function(row){
+    const copy = row.slice();
+
+    while(copy.length < maxCols){
+      copy.push("");
+    }
+
+    return copy;
+  });
+}
+
+function createTableBlock(rows){
+  const wrap = document.createElement("div");
+  wrap.className = "table-wrap";
+
+  const table = document.createElement("table");
+  table.className = "smart-table";
+
+  const tbody = document.createElement("tbody");
+
+  rows.forEach(function(row,rowIndex){
+    const tr = document.createElement("tr");
+
+    row.forEach(function(cell){
+      const cellTag = rowIndex === 0 ? "th" : "td";
+      const td = document.createElement(cellTag);
+
+      td.innerHTML = inlineMarkdown(cell);
+      setSmartDirection(td,cell);
+
+      tr.appendChild(td);
+    });
+
+    tbody.appendChild(tr);
+  });
+
+  table.appendChild(tbody);
+
+  const allText = rows.map(function(r){
+    return r.join(" ");
+  }).join(" ");
+
+  setSmartDirection(table,allText);
+  setSmartDirection(wrap,allText);
+
+  wrap.appendChild(table);
+
+  return wrap;
+}
+
+/* =========================
+   PAGINATION
+   ========================= */
+
+function paginateBlocks(blocks){
+  const density = document.getElementById("density").value;
+
+  let maxUnits = 64;
+
+  if(density === "compact"){
+    maxUnits = 64;
+  }
+
+  if(density === "normal"){
+    maxUnits = 52;
+  }
+
+  if(density === "spacious"){
+    maxUnits = 42;
+  }
+
+  const pages = [];
+  let current = [];
+  let units = 0;
+
+  for(let i = 0; i < blocks.length; i++){
+    const block = blocks[i];
+    const weight = getBlockWeight(block);
+
+    const nextBlock = blocks[i + 1];
+    const keepWithNext =
+      isTitleBlock(block) &&
+      nextBlock &&
+      !isTitleBlock(nextBlock);
+
+    const nextWeight = keepWithNext ? getBlockWeight(nextBlock) : 0;
+    const totalNeeded = weight + nextWeight;
+
+    if(current.length > 0 && units + totalNeeded > maxUnits){
+      pages.push(current);
+      current = [];
+      units = 0;
+    }
+
+    current.push(block);
+    units += weight;
+  }
+
+  if(current.length){
+    pages.push(current);
+  }
+
+  return pages;
+}
+
+function getBlockWeight(el){
+  const txt = el.innerText || "";
+  const len = txt.length;
+
+  if(el.classList.contains("main-title")){
+    return 5;
+  }
+
+  if(el.classList.contains("section-title")){
+    return 4;
+  }
+
+  if(el.classList.contains("sub-title")){
+    return 3;
+  }
+
+  if(el.classList.contains("small-title")){
+    return 2;
+  }
+
+  if(el.classList.contains("table-wrap")){
+    const rows = el.querySelectorAll("tr").length;
+    const cellsText = txt.length;
+    return Math.max(4, rows * 2 + Math.ceil(cellsText / 100));
+  }
+
+  if(el.classList.contains("md-list-item")){
+    return Math.max(1, Math.ceil(len / 65));
+  }
+
+  if(el.classList.contains("important")){
+    return Math.max(2, Math.ceil(len / 60) + 1);
+  }
+
+  if(el.classList.contains("quote")){
+    return Math.max(2, Math.ceil(len / 65) + 1);
+  }
+
+  if(el.classList.contains("heading")){
+    return Math.max(2, Math.ceil(len / 70) + 1);
+  }
+
+  if(el.tagName === "HR"){
+    return 1;
+  }
+
+  return Math.max(1, Math.ceil(len / 75));
+}
+
+function isTitleBlock(el){
+  return el.classList &&
+    (
+      el.classList.contains("main-title") ||
+      el.classList.contains("section-title") ||
+      el.classList.contains("sub-title") ||
+      el.classList.contains("small-title")
+    );
+}
+
+/* =========================
+   INLINE MARKDOWN
+   ========================= */
+
+function inlineMarkdown(text){
+  let x = escapeHtml(text);
+
+  x = x
+    .replace(/`([^`]+)`/g,"<code>$1</code>")
+    .replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>")
+    .replace(/__([^_]+)__/g,"<strong>$1</strong>")
+    .replace(/\*([^*]+)\*/g,"<em>$1</em>")
+    .replace(/_([^_]+)_/g,"<em>$1</em>");
+
+  return x;
+}
+
+function escapeHtml(str){
+  return String(str)
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;");
+}
+
+/* =========================
+   COPY AND CLEAR
+   ========================= */
+
+async function copyFormatted(){
+  const output = document.getElementById("output");
+
+  if(!output.innerText.trim()){
+    alert("اضغط ترتيب أولاً");
+    return;
+  }
+
+  try{
+    await navigator.clipboard.write([
+      new ClipboardItem({
+        "text/html": new Blob([output.innerHTML], {type:"text/html"}),
+        "text/plain": new Blob([output.innerText], {type:"text/plain"})
+      })
+    ]);
+    alert("تم النسخ بتنسيق منسق ✅");
+  }catch(e){
+    await navigator.clipboard.writeText(output.innerText);
+    alert("تم نسخ النص فقط ✅");
+  }
+}
+
+function clearInputOnly(){
+  document.getElementById("input").value = "";
+  document.getElementById("output").innerHTML = "";
+  latestPlainText = "";
+}
+
+function clearAll(){
+  document.getElementById("input").value = "";
+  document.getElementById("output").innerHTML = "";
+  latestPlainText = "";
+}
+</script>
+
+</body>
+</html>
